@@ -1,25 +1,9 @@
 .PHONY: fmt clean deep-clean test test-update test-race help
 .DEFAULT: server
 
-BINARIES := $(find cmd -maxdepth 1 -mindepth 1 -type d -exec basename {} \;)
 TEST := CONFIG_ENV=test go test ./...
-CONTAINER := insider
 
 VERSION ?= $(shell git describe --abbrev=0 --tags)
-BUILD_FLAGS := 
-
-ifneq (,$(wildcard ./vendor))
-	$(warning Found vendor directory; setting "-mod vendor" to any "go build" commands)
-	BUILD_FLAGS += -mod vendor
-endif
-
-PORT ?= 7071
-
-#==============================
-# Builds
-#==============================
-$(BINARIES): ## Create the server's binary -> ./bin/server
-	$(BASE_FLAGS) go build $(BUILD_FLAGS) -ldflags="-X 'github.com/AnthonyHewins/insider/cmd/root.version=$(VERSION)'" -o ./bin/$@ ./...
 
 #==============================
 # App hygiene
