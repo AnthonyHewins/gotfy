@@ -1,6 +1,9 @@
 package gotfy
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/url"
@@ -12,8 +15,8 @@ var (
 
 // TopicPublisher creates messages for topics
 type TopicPublisher struct {
-	httpClient *http.Client
 	server     *url.URL
+	httpClient *http.Client
 }
 
 // NewTopicPublisher creates a topic publisher for the specified server URL,
@@ -31,4 +34,19 @@ func NewTopicPublisher(server *url.URL, httpClient *http.Client) (*TopicPublishe
 		httpClient: httpClient,
 		server:     server,
 	}, nil
+}
+
+func (t *TopicPublisher) SendMessage(ctx context.Context, m *Message) error {
+	buf, err := json.Marshal(m)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, t.server.String(), bytes.NewReader(buf))
+	if err != nil {
+		return err
+	}
+
+	_, err = t.httpClient.Do(req)
+	return err
 }
