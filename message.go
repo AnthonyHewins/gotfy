@@ -1,6 +1,8 @@
 package gotfy
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/url"
 	"time"
 )
@@ -23,4 +25,110 @@ type Message struct {
 
 	AttachURLFilename string   `json:"filename,omitempty"`  // File name of the attachment
 	AttachURL         *url.URL `json:"attachurl,omitempty"` // URL of an attachment
+}
+
+func (m *Message) MarshalJSON() ([]byte, error) {
+	buf, err := json.Marshal(m.Topic)
+	if err != nil {
+		return nil, err
+	}
+	buf = []byte(fmt.Sprintf(`{"topic":%s`, buf))
+
+	if x := m.Message; x != "" {
+		mm, err := json.Marshal(x)
+		if err != nil {
+			return nil, err
+		}
+		buf = append(buf, fmt.Sprintf(`,"message":%s`, mm)...)
+	}
+
+	if x := m.Title; x != "" {
+		mm, err := json.Marshal(x)
+		if err != nil {
+			return nil, err
+		}
+		buf = append(buf, fmt.Sprintf(`,"title":%s`, mm)...)
+	}
+
+	if x := m.Tags; len(x) > 0 {
+		mm, err := json.Marshal(x)
+		if err != nil {
+			return nil, err
+		}
+		buf = append(buf, fmt.Sprintf(`,"tags":%s`, mm)...)
+	}
+
+	if x := m.Priority; x > 0 {
+		mm, err := json.Marshal(x)
+		if err != nil {
+			return nil, err
+		}
+		buf = append(buf, fmt.Sprintf(`,"priority":%s`, mm)...)
+	}
+
+	if x := m.Actions; len(x) > 0 {
+		mm, err := json.Marshal(x)
+		if err != nil {
+			return nil, err
+		}
+		buf = append(buf, fmt.Sprintf(`,"actions":%s`, mm)...)
+	}
+
+	if x := m.ClickURL; x != nil {
+		mm, err := json.Marshal(x.String())
+		if err != nil {
+			return nil, err
+		}
+		buf = append(buf, fmt.Sprintf(`,"click":%s`, mm)...)
+	}
+
+	if x := m.AttachURL; x != nil {
+		mm, err := json.Marshal(x.String())
+		if err != nil {
+			return nil, err
+		}
+		buf = append(buf, fmt.Sprintf(`,"attachurl":%s`, mm)...)
+	}
+
+	if x := m.IconURL; x != nil {
+		mm, err := json.Marshal(x.String())
+		if err != nil {
+			return nil, err
+		}
+		buf = append(buf, fmt.Sprintf(`,"icon":%s`, mm)...)
+	}
+
+	if x := m.Delay; x > 0 {
+		mm, err := json.Marshal(x.String())
+		if err != nil {
+			return nil, err
+		}
+		buf = append(buf, fmt.Sprintf(`,"delay":%s`, mm)...)
+	}
+
+	if x := m.Email; x != `` {
+		mm, err := json.Marshal(x)
+		if err != nil {
+			return nil, err
+		}
+		buf = append(buf, fmt.Sprintf(`,"email":%s`, mm)...)
+	}
+
+	if x := m.Call; x != `` {
+		mm, err := json.Marshal(x)
+		if err != nil {
+			return nil, err
+		}
+		buf = append(buf, fmt.Sprintf(`,"call":%s`, mm)...)
+	}
+
+	if x := m.AttachURLFilename; x != `` {
+		mm, err := json.Marshal(x)
+		if err != nil {
+			return nil, err
+		}
+		buf = append(buf, fmt.Sprintf(`,"filename":%s`, mm)...)
+	}
+
+	return append(buf, '}'), nil
 }
