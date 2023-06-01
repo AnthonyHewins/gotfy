@@ -5,8 +5,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
+	"math"
 	"net/http"
 	"net/url"
+
+	"golang.org/x/exp/slog"
 )
 
 var (
@@ -17,11 +22,18 @@ var (
 type TopicPublisher struct {
 	server     *url.URL
 	httpClient *http.Client
+	logger     *slog.Logger
 }
 
 // NewTopicPublisher creates a topic publisher for the specified server URL,
-// and uses the supplied HTTP client to resolve the request
-func NewTopicPublisher(server *url.URL, httpClient *http.Client) (*TopicPublisher, error) {
+// and uses the supplied HTTP client to resolve the request. Uses the golang
+// slog package to log to, supply nil if you don't want anything logged out
+func NewTopicPublisher(slogger *slog.Logger, server *url.URL, httpClient *http.Client) (*TopicPublisher, error) {
+	if slogger == nil {
+		// if no logger is passed, ignore absolutely everything
+		slogger = slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{Level: slog.Level(math.MaxInt)}))
+	}
+
 	if server == nil {
 		return nil, ErrNoTopic
 	}
@@ -31,22 +43,56 @@ func NewTopicPublisher(server *url.URL, httpClient *http.Client) (*TopicPublishe
 	}
 
 	return &TopicPublisher{
-		httpClient: httpClient,
 		server:     server,
+		httpClient: httpClient,
+		logger:     slogger,
 	}, nil
 }
 
-func (t *TopicPublisher) SendMessage(ctx context.Context, m *Message) error {
+func (t *TopicPublisher) SendMessage(ctx context.Context, m *Message) (*PublishResp, error) {
+	l := slog.With("message", m)
+
+	l.DebugCtx(ctx, "marshaling NTFY message")
 	buf, err := json.Marshal(m)
 	if err != nil {
-		return err
+		l.ErrorCtx(ctx, "failed marshal", "err", err)
+		return nil, err
 	}
 
+	l.DebugCtx(ctx, "finished marshal, creating request struct", "server", t.server)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, t.server.String(), bytes.NewReader(buf))
 	if err != nil {
-		return err
+		l.ErrorCtx(ctx, "failed creating HTTP request", "err", err)
+		return nil, err
 	}
 
-	_, err = t.httpClient.Do(req)
-	return err
+	l.DebugCtx(ctx, "finished creation of request struct, prepping HTTP call", "req", req)
+	resp, err := t.httpClient.Do(req)
+	if err != nil {
+		l.ErrorCtx(ctx, "failed HTTP call", "http client", t.httpClient, "req", req, "err", err)
+		return nil, err
+	}
+
+	code := resp.StatusCode
+	l.DebugCtx(ctx, "finished HTTP call, reading response body", "status code", code)
+	buf, err = io.ReadAll(resp.Body)
+	if err != nil {
+		l.ErrorCtx(ctx, "failed reading response body", "status code", code, "err", err)
+		return nil, err
+	}
+
+	if s := resp.StatusCode; s >= 200 && s < 300 {
+		l.ErrorCtx(ctx, "bad HTTP response code from server", "response body", string(buf), "status code", code)
+		return nil, fmt.Errorf("bad http response from server: %d", code)
+	}
+
+	l.DebugCtx(ctx, "unmarshaling response body")
+	var pubResp PublishResp
+	if err = json.Unmarshal(buf, &pubResp); err != nil {
+		l.ErrorCtx(ctx, "failed unmarshaling response body", "response body", string(buf), "status code", code)
+		return nil, err
+	}
+
+	l.DebugCtx(ctx, "finished unmarshal")
+	return &pubResp, nil
 }
