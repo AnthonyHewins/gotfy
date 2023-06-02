@@ -20,18 +20,20 @@ var (
 
 // TopicPublisher creates messages for topics
 type TopicPublisher struct {
+	logger slog.Logger
+
 	server     *url.URL
 	httpClient *http.Client
-	logger     *slog.Logger
 }
 
 // NewTopicPublisher creates a topic publisher for the specified server URL,
 // and uses the supplied HTTP client to resolve the request. Uses the golang
-// slog package to log to, supply nil if you don't want anything logged out
-func NewTopicPublisher(slogger *slog.Logger, server *url.URL, httpClient *http.Client) (*TopicPublisher, error) {
-	if slogger == nil {
+// slog package to log to; if you want to skip all logs supply slog.Logger{}
+// with a blank handler, and the publisher will do a no-op
+func NewTopicPublisher(slogger slog.Logger, server *url.URL, httpClient *http.Client) (*TopicPublisher, error) {
+	if slogger.Handler() == nil {
 		// if no logger is passed, ignore absolutely everything
-		slogger = slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{Level: slog.Level(math.MaxInt)}))
+		slogger = slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{Level: math.MaxInt}))
 	}
 
 	if server == nil {
@@ -81,7 +83,7 @@ func (t *TopicPublisher) SendMessage(ctx context.Context, m *Message) (*PublishR
 		return nil, err
 	}
 
-	if s := resp.StatusCode; s >= 200 && s < 300 {
+	if s := resp.StatusCode; s < 200 || s >= 300 {
 		l.ErrorCtx(ctx, "bad HTTP response code from server", "response body", string(buf), "status code", code)
 		return nil, fmt.Errorf("bad http response from server: %d", code)
 	}
