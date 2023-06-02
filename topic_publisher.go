@@ -20,7 +20,7 @@ var (
 
 // TopicPublisher creates messages for topics
 type TopicPublisher struct {
-	logger slog.Logger
+	logger *slog.Logger
 
 	server     *url.URL
 	httpClient *http.Client
@@ -30,10 +30,10 @@ type TopicPublisher struct {
 // and uses the supplied HTTP client to resolve the request. Uses the golang
 // slog package to log to; if you want to skip all logs supply slog.Logger{}
 // with a blank handler, and the publisher will do a no-op
-func NewTopicPublisher(slogger slog.Logger, server *url.URL, httpClient *http.Client) (*TopicPublisher, error) {
+func NewTopicPublisher(slogger *slog.Logger, server *url.URL, httpClient *http.Client) (*TopicPublisher, error) {
 	if slogger.Handler() == nil {
 		// if no logger is passed, ignore absolutely everything
-		slogger = slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{Level: math.MaxInt}))
+		slogger = slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{Level: slog.Level(math.MaxInt)}))
 	}
 
 	if server == nil {
