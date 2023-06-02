@@ -31,7 +31,7 @@ type TopicPublisher struct {
 // slog package to log to; if you want to skip all logs supply slog.Logger{}
 // with a blank handler, and the publisher will do a no-op
 func NewTopicPublisher(slogger *slog.Logger, server *url.URL, httpClient *http.Client) (*TopicPublisher, error) {
-	if slogger.Handler() == nil {
+	if slogger == nil {
 		// if no logger is passed, ignore absolutely everything
 		slogger = slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{Level: slog.Level(math.MaxInt)}))
 	}
