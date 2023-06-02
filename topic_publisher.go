@@ -15,7 +15,8 @@ import (
 )
 
 var (
-	ErrNoTopic = errors.New("topic is nil")
+	ErrNoServer = errors.New("server is nil")
+	ErrNoTopic  = errors.New("topic is nil")
 )
 
 // TopicPublisher creates messages for topics
@@ -37,7 +38,7 @@ func NewTopicPublisher(slogger *slog.Logger, server *url.URL, httpClient *http.C
 	}
 
 	if server == nil {
-		return nil, ErrNoTopic
+		return nil, ErrNoServer
 	}
 
 	if httpClient == nil {
@@ -52,7 +53,7 @@ func NewTopicPublisher(slogger *slog.Logger, server *url.URL, httpClient *http.C
 }
 
 func (t *TopicPublisher) SendMessage(ctx context.Context, m *Message) (*PublishResp, error) {
-	l := slog.With("message", m)
+	l := t.logger.With("message", m)
 
 	l.DebugCtx(ctx, "marshaling NTFY message")
 	buf, err := json.Marshal(m)
