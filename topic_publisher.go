@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"golang.org/x/exp/slog"
+	"log/slog"
 )
 
 var (
@@ -55,47 +55,47 @@ func NewTopicPublisher(slogger *slog.Logger, server *url.URL, httpClient *http.C
 func (t *TopicPublisher) SendMessage(ctx context.Context, m *Message) (*PublishResp, error) {
 	l := t.logger.With("message", m)
 
-	l.DebugCtx(ctx, "marshaling NTFY message")
+	l.DebugContext(ctx, "marshaling NTFY message")
 	buf, err := json.Marshal(m)
 	if err != nil {
-		l.ErrorCtx(ctx, "failed marshal", "err", err)
+		l.ErrorContext(ctx, "failed marshal", "err", err)
 		return nil, err
 	}
 
-	l.DebugCtx(ctx, "finished marshal, creating request struct", "server", t.server)
+	l.DebugContext(ctx, "finished marshal, creating request struct", "server", t.server)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, t.server.String(), bytes.NewReader(buf))
 	if err != nil {
-		l.ErrorCtx(ctx, "failed creating HTTP request", "err", err)
+		l.ErrorContext(ctx, "failed creating HTTP request", "err", err)
 		return nil, err
 	}
 
-	l.DebugCtx(ctx, "finished creation of request struct, prepping HTTP call", "req", req)
+	l.DebugContext(ctx, "finished creation of request struct, prepping HTTP call", "req", req)
 	resp, err := t.httpClient.Do(req)
 	if err != nil {
-		l.ErrorCtx(ctx, "failed HTTP call", "http client", t.httpClient, "req", req, "err", err)
+		l.ErrorContext(ctx, "failed HTTP call", "http client", t.httpClient, "req", req, "err", err)
 		return nil, err
 	}
 
 	code := resp.StatusCode
-	l.DebugCtx(ctx, "finished HTTP call, reading response body", "status code", code)
+	l.DebugContext(ctx, "finished HTTP call, reading response body", "status code", code)
 	buf, err = io.ReadAll(resp.Body)
 	if err != nil {
-		l.ErrorCtx(ctx, "failed reading response body", "status code", code, "err", err)
+		l.ErrorContext(ctx, "failed reading response body", "status code", code, "err", err)
 		return nil, err
 	}
 
 	if s := resp.StatusCode; s < 200 || s >= 300 {
-		l.ErrorCtx(ctx, "bad HTTP response code from server", "response body", string(buf), "status code", code)
+		l.ErrorContext(ctx, "bad HTTP response code from server", "response body", string(buf), "status code", code)
 		return nil, fmt.Errorf("bad http response from server: %d", code)
 	}
 
-	l.DebugCtx(ctx, "unmarshaling response body")
+	l.DebugContext(ctx, "unmarshaling response body")
 	var pubResp PublishResp
 	if err = json.Unmarshal(buf, &pubResp); err != nil {
-		l.ErrorCtx(ctx, "failed unmarshaling response body", "response body", string(buf), "status code", code)
+		l.ErrorContext(ctx, "failed unmarshaling response body", "response body", string(buf), "status code", code)
 		return nil, err
 	}
 
-	l.DebugCtx(ctx, "finished unmarshal")
+	l.DebugContext(ctx, "finished unmarshal")
 	return &pubResp, nil
 }
