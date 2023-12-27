@@ -3,12 +3,12 @@ package gotfy
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
+
+	"github.com/goccy/go-json"
 )
 
 var (
@@ -16,15 +16,17 @@ var (
 	ErrNoTopic  = errors.New("topic is nil")
 )
 
-// TopicPublisher creates messages for topics
-type TopicPublisher struct {
+// Publisher creates messages for topics
+type Publisher struct {
 	server     *url.URL
 	httpClient *http.Client
+
+	Headers http.Header
 }
 
-// NewTopicPublisher creates a topic publisher for the specified server URL,
+// NewPublisher creates a topic publisher for the specified server URL,
 // and uses the supplied HTTP client to resolve the request
-func NewTopicPublisher(server *url.URL, httpClient *http.Client) (*TopicPublisher, error) {
+func NewPublisher(server *url.URL, httpClient *http.Client) (*Publisher, error) {
 	if server == nil {
 		return nil, ErrNoServer
 	}
@@ -33,14 +35,15 @@ func NewTopicPublisher(server *url.URL, httpClient *http.Client) (*TopicPublishe
 		httpClient = http.DefaultClient
 	}
 
-	return &TopicPublisher{
+	return &Publisher{
 		server:     server,
 		httpClient: httpClient,
+		Headers:    http.Header{"Content-Type": []string{"application/json"}},
 	}, nil
 }
 
-func (t *TopicPublisher) SendMessage(ctx context.Context, m *Message) (*PublishResp, error) {
-	buf, err := json.Marshal(m)
+func (t *Publisher) SendMessage(ctx context.Context, m *Message) (*PublishResp, error) {
+	buf, err := json.MarshalContext(ctx, m)
 	if err != nil {
 		return nil, err
 	}
@@ -54,19 +57,14 @@ func (t *TopicPublisher) SendMessage(ctx context.Context, m *Message) (*PublishR
 	if err != nil {
 		return nil, err
 	}
-
-	code := resp.StatusCode
-	buf, err = io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
+	defer resp.Body.Close()
 
 	if s := resp.StatusCode; s < 200 || s >= 300 {
-		return nil, fmt.Errorf("bad http response from server: %d", code)
+		return nil, fmt.Errorf("non-200 http response code from server: %d", s)
 	}
 
 	var pubResp PublishResp
-	if err = json.Unmarshal(buf, &pubResp); err != nil {
+	if err = json.NewDecoder(resp.Body).DecodeContext(ctx, &pubResp); err != nil {
 		return nil, err
 	}
 
