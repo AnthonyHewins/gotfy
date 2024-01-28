@@ -1,6 +1,8 @@
 package gotfy
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/url"
 	"testing"
 
@@ -115,12 +117,33 @@ func TestMessageMarshalJSON(mainTest *testing.T) {
 			},
 			expected: `{"topic":"Topic","message":"Message","title":"Title","tags":["tag1","tag2"],"priority":4,"actions":[{"action":"view","label":"ajisdiopa","url":"h://t.com","clear":true}],"click":"h://t.com","attachurl":"h://t.com","icon":"h://t.com","delay":"100ns","email":"Email","call":"Call","filename":"AttachURLFilename"}`,
 		},
+		{
+			name: "test case failure 1/28/2024",
+			arg: Message{
+				Topic:             "9mm Luger brass 115 grain: $225.00/round, 1000 rounds",
+				Title:             "",
+				Tags:              []string{Nine},
+				Priority:          0,
+				Actions:           []ActionButton{},
+				ClickURL:          &url.URL{},
+				IconURL:           &url.URL{},
+				Delay:             0,
+				Email:             "",
+				Call:              "",
+				AttachURLFilename: "",
+				AttachURL:         &url.URL{},
+				Message:           "ZSR: 9mm - ZSR Buffalo Cartridge 115 Grain Full Metal Jacket - 1000 Rounds 8683262441013 - FREE SHIPPING\n5.0/5 stars, 204 ratings",
+			},
+			expected: `{"topic":"9mm Luger brass 115 grain: $225.00/round, 1000 rounds","message":"ZSR: 9mm - ZSR Buffalo Cartridge 115 Grain Full Metal Jacket - 1000 Rounds 8683262441013 - FREE SHIPPING\n5.0/5 stars, 204 ratings","tags":["nine"]}`,
+		},
 	}
 
 	t := assert.New(mainTest)
 	for _, tc := range testCases {
-		actual, actualErr := tc.arg.MarshalJSON()
-		t.Equal([]byte(tc.expected), actual, tc.name)
-		t.Equal(tc.expectedErr, actualErr, tc.name)
+		actual, actualErr := json.Marshal(&tc.arg)
+
+		if t.Nil(actualErr, fmt.Sprintf("should not return %s", actualErr)) {
+			t.Equal([]byte(tc.expected), actual, tc.name)
+		}
 	}
 }
