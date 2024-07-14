@@ -53,6 +53,12 @@ func (t *Publisher) SendMessage(ctx context.Context, m *Message) (*PublishResp, 
 		return nil, err
 	}
 
+	for name, headers := range t.Headers {
+		for _, h := range headers {
+			req.Header.Set(name, h)
+		}
+	}
+
 	resp, err := t.httpClient.Do(req)
 	if err != nil {
 		return nil, err
