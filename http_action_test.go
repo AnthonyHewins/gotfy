@@ -1,17 +1,13 @@
 package gotfy
 
 import (
-	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestHTTPActionMarshal(mainTest *testing.T) {
-	path, err := url.Parse("https://github.com/AnthonyHewins/gotfy")
-	if err != nil {
-		mainTest.Fatalf("failed setting up test var: %v", err)
-	}
+	path := "https://github.com/AnthonyHewins/gotfy"
 
 	testCases := []struct {
 		name        string
@@ -21,41 +17,41 @@ func TestHTTPActionMarshal(mainTest *testing.T) {
 	}{
 		{
 			name:     "base case",
-			expected: `{"action":"http","label":"","url":null}`,
+			expected: `{"action":"http","label":"","url":""}`,
 		},
 		{
 			name:     "label",
 			arg:      HttpAction[string]{Label: "label"},
-			expected: `{"action":"http","label":"label","url":null}`,
+			expected: `{"action":"http","label":"label","url":""}`,
 		},
 		{
 			name:     "url",
 			arg:      HttpAction[string]{URL: path},
-			expected: `{"action":"http","label":"","url":{"Scheme":"https","Opaque":"","User":null,"Host":"github.com","Path":"/AnthonyHewins/gotfy","RawPath":"","OmitHost":false,"ForceQuery":false,"RawQuery":"","Fragment":"","RawFragment":""}}`,
+			expected: `{"action":"http","label":"","url":"https://github.com/AnthonyHewins/gotfy"}`,
 		},
 		{
 			name:     "method",
 			arg:      HttpAction[string]{Method: "method"},
-			expected: `{"action":"http","label":"","method":"method","url":null}`,
+			expected: `{"action":"http","label":"","method":"method","url":""}`,
 		},
 		{
 			name:     "headers",
 			arg:      HttpAction[string]{Headers: map[string]string{"header": "val"}},
-			expected: `{"action":"http","headers":{"header":"val"},"label":"","url":null}`,
+			expected: `{"action":"http","headers":{"header":"val"},"label":"","url":""}`,
 		},
 		{
 			name: "body",
 			arg: HttpAction[string]{
 				Body: "body",
 			},
-			expected: `{"action":"http","body":"IlwiYm9keVwiIg==","label":"","url":null}`,
+			expected: `{"action":"http","body":"IlwiYm9keVwiIg==","label":"","url":""}`,
 		},
 		{
 			name: "clear",
 			arg: HttpAction[string]{
 				Clear: true,
 			},
-			expected: `{"action":"http","clear":true,"label":"","url":null}`,
+			expected: `{"action":"http","clear":true,"label":"","url":""}`,
 		},
 		{
 			name: "everything",
@@ -67,7 +63,7 @@ func TestHTTPActionMarshal(mainTest *testing.T) {
 				Body:    "body",
 				Clear:   true,
 			},
-			expected: `{"action":"http","body":"IlwiYm9keVwiIg==","clear":true,"headers":{"header":"val"},"label":"label","method":"method","url":{"Scheme":"https","Opaque":"","User":null,"Host":"github.com","Path":"/AnthonyHewins/gotfy","RawPath":"","OmitHost":false,"ForceQuery":false,"RawQuery":"","Fragment":"","RawFragment":""}}`,
+			expected: `{"action":"http","body":"IlwiYm9keVwiIg==","clear":true,"headers":{"header":"val"},"label":"label","method":"method","url":"https://github.com/AnthonyHewins/gotfy"}`,
 		},
 	}
 
