@@ -3,9 +3,8 @@
 #==============================
 # App hygiene
 #==============================
-update: ## go mod tidy, then go get -u -d
-	go mod tidy
-	go get -u -d ./...
+update: clean ## go mod tidy, then go get -u -d
+	go get -u ./...
 
 clean: ## go mod tidy
 	go mod tidy
@@ -19,7 +18,7 @@ deep-clean: clean ## Run clean, then purge modcache
 #==============================
 test: ## go vet, then run tests
 	go vet ./...
-	CONFIG_ENV=test go test ./...
+	go test ./...
 
 
 #==============================
