@@ -2,12 +2,11 @@ package gotfy
 
 import (
 	"encoding/json"
-	"net/url"
 )
 
 type ViewAction struct {
 	Label string
-	Link  *url.URL
+	Link  string
 	Clear bool
 }
 
@@ -24,8 +23,8 @@ func (v *ViewAction) MarshalJSON() ([]byte, error) {
 	}
 	buf = append(buf, labelBuf...)
 
-	if v.Link != nil {
-		urlBuf, err := json.Marshal(v.Link.String())
+	if v.Link != "" {
+		urlBuf, err := json.Marshal(v.Link)
 		if err != nil {
 			return nil, err
 		}

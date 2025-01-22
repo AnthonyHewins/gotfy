@@ -1,17 +1,13 @@
 package gotfy
 
 import (
-	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestViewMarshalJSON(mainTest *testing.T) {
-	uri, err := url.Parse("https://docs.ntfy.sh/publish/#icons")
-	if err != nil {
-		mainTest.Fatalf("failed setting up test URL: %v", err)
-	}
+	uri := "https://docs.ntfy.sh/publish/#icons"
 
 	testCases := []struct {
 		name        string
