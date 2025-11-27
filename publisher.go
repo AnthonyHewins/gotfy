@@ -3,6 +3,7 @@ package gotfy
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
@@ -24,22 +25,43 @@ type Publisher struct {
 	Headers http.Header
 }
 
-// NewPublisher creates a topic publisher for the specified server URL,
-// and uses the supplied HTTP client to resolve the request
-func NewPublisher(server *url.URL, httpClient *http.Client) (*Publisher, error) {
+// Option is a functional option for configuring a Publisher
+type Option func(*Publisher)
+
+// WithHTTPClient sets a custom HTTP client for the publisher
+func WithHTTPClient(client *http.Client) Option {
+	return func(p *Publisher) {
+		p.httpClient = client
+	}
+}
+
+// WithAuth adds basic authentication to the publisher's headers
+func WithAuth(username, password string) Option {
+	return func(p *Publisher) {
+		auth := username + ":" + password
+		encoded := base64.StdEncoding.EncodeToString([]byte(auth))
+		p.Headers.Set("Authorization", "Basic "+encoded)
+	}
+}
+
+// NewPublisher creates a topic publisher for the specified server URL.
+// Options can be provided to customize the publisher behavior.
+func NewPublisher(server *url.URL, opts ...Option) (*Publisher, error) {
 	if server == nil {
 		return nil, ErrNoServer
 	}
 
-	if httpClient == nil {
-		httpClient = http.DefaultClient
+	p := &Publisher{
+		server:     server,
+		httpClient: http.DefaultClient,
+		Headers:    http.Header{"Content-Type": []string{"application/json"}},
 	}
 
-	return &Publisher{
-		server:     server,
-		httpClient: httpClient,
-		Headers:    http.Header{"Content-Type": []string{"application/json"}},
-	}, nil
+	for _, opt := range opts {
+		opt(p)
+	}
+
+	return p, nil
 }
 
 func (t *Publisher) SendMessage(ctx context.Context, m *Message) (*PublishResp, error) {

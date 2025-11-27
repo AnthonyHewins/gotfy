@@ -12,10 +12,27 @@ go get github.com/AnthonyHewins/gotfy
 ## Example usage
 
 ```go
-server, _ := url.Parse("http://server.com")
-customHTTPClient := http.DefaultClient
+server, _ := url.Parse("https://server.com")
 
-tp, err := gotfy.NewPublisher(server, customHTTPClient)
+// Create a publisher with default HTTP client
+tp, err := gotfy.NewPublisher(server)
+if err != nil {
+    panic("bad config:"+err.Error())
+}
+
+// Or with custom HTTP client
+customHTTPClient := http.DefaultClient
+tp, err := gotfy.NewPublisher(server, gotfy.WithHTTPClient(customHTTPClient))
+
+// Or with basic authentication
+tp, err := gotfy.NewPublisher(server, gotfy.WithAuth("username", "password"))
+
+// Or combine multiple options
+tp, err := gotfy.NewPublisher(
+    server, 
+    gotfy.WithHTTPClient(customHTTPClient),
+    gotfy.WithAuth("username", "password"),
+)
 if err != nil {
     panic("bad config:"+err.Error())
 }
