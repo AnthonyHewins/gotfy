@@ -2,6 +2,7 @@ package gotfy
 
 import (
 	"encoding/json"
+	"time"
 )
 
 // Message is a struct you can create from TopicPublisher that
@@ -16,7 +17,7 @@ type Message struct {
 	Actions  []ActionButton `json:"actions,omitempty"`  // Custom user action buttons for notifications
 	ClickURL string         `json:"click,omitempty"`    // Website opened when notification is clicked
 	IconURL  string         `json:"icon,omitempty"`     // URL to use as notification icon
-	Delay    interface{}    `json:"delay,omitempty"`    // Duration to delay delivery (string, int, whatever)
+	Delay    time.Duration  `json:"delay,omitempty"`    // Duration to delay delivery
 	Email    string         `json:"email,omitempty"`    // E-mail address for e-mail notifications
 	Call     string         `json:"call,omitempty"`     // Phone number to use for voice call
 
@@ -25,25 +26,43 @@ type Message struct {
 }
 
 func (m *Message) MarshalJSON() ([]byte, error) {
-	// if m.Priority <0, drop it
-	if m.Priority < 0 {
-		m.Priority = 0 // can't use nil, but this works
-	}
-	// if m.Delay is int and <=0, drop it
-	if i, ok := m.Delay.(int); ok && i <= 0 {
-		m.Delay = nil
+	type wire struct {
+		Topic    string         `json:"topic"`
+		Message  string         `json:"message,omitempty"`
+		Title    string         `json:"title,omitempty"`
+		Tags     []string       `json:"tags,omitempty"`
+		Priority Priority       `json:"priority,omitempty"`
+		Actions  []ActionButton `json:"actions,omitempty"`
+		ClickURL string         `json:"click,omitempty"`
+		IconURL  string         `json:"icon,omitempty"`
+		Delay    string         `json:"delay,omitempty"`
+		Email    string         `json:"email,omitempty"`
+		Call     string         `json:"call,omitempty"`
+
+		AttachURLFilename string `json:"filename,omitempty"`
+		AttachURL         string `json:"attachurl,omitempty"`
 	}
 
-	return json.Marshal(Message{
+	priority := m.Priority
+	if priority < 0 {
+		priority = 0
+	}
+
+	var delay string
+	if m.Delay > 0 {
+		delay = m.Delay.String()
+	}
+
+	return json.Marshal(wire{
 		Topic:    m.Topic,
 		Message:  m.Message,
 		Title:    m.Title,
 		Tags:     m.Tags,
-		Priority: m.Priority,
+		Priority: priority,
 		Actions:  m.Actions,
 		ClickURL: m.ClickURL,
 		IconURL:  m.IconURL,
-		Delay:    m.Delay,
+		Delay:    delay,
 		Email:    m.Email,
 		Call:     m.Call,
 

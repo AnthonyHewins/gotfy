@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -69,13 +70,8 @@ func TestMessageMarshalJSON(mainTest *testing.T) {
 			expected: `{"topic":"","icon":"h://t.com"}`,
 		},
 		{
-			name:     "Delay as int",
-			arg:      Message{Delay: 1},
-			expected: `{"topic":"","delay":1}`,
-		},
-		{
-			name:     "Delay as string",
-			arg:      Message{Delay: "1ns"},
+			name:     "Delay as duration",
+			arg:      Message{Delay: time.Nanosecond},
 			expected: `{"topic":"","delay":"1ns"}`,
 		},
 		{
@@ -113,13 +109,13 @@ func TestMessageMarshalJSON(mainTest *testing.T) {
 				}},
 				ClickURL:          "h://t.com",
 				IconURL:           "h://t.com",
-				Delay:             "10m",
+				Delay:             10 * time.Minute,
 				Email:             "Email",
 				Call:              "Call",
 				AttachURLFilename: "AttachURLFilename",
 				AttachURL:         "h://t.com",
 			},
-			expected: `{"topic":"Topic","message":"Message","title":"Title","tags":["tag1","tag2"],"priority":4,"actions":[{"action":"view","label":"ajisdiopa","url":"h://t.com","clear":true}],"click":"h://t.com","icon":"h://t.com","delay":"10m","email":"Email","call":"Call","filename":"AttachURLFilename","attachurl":"h://t.com"}`,
+			expected: `{"topic":"Topic","message":"Message","title":"Title","tags":["tag1","tag2"],"priority":4,"actions":[{"action":"view","label":"ajisdiopa","url":"h://t.com","clear":true}],"click":"h://t.com","icon":"h://t.com","delay":"10m0s","email":"Email","call":"Call","filename":"AttachURLFilename","attachurl":"h://t.com"}`,
 		},
 		{
 			name: "test case failure 1/28/2024",
