@@ -37,7 +37,7 @@ if err != nil {
     panic("bad config:"+err.Error())
 }
 
-pubResp, err := tp.SendMessage(&gotfy.Message{
+pubResp, err := tp.SendMessage(context.Background(), &gotfy.Message{
     Topic:   "topic",
     Message: "message",
     Title: "title",
