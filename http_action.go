@@ -2,13 +2,12 @@ package gotfy
 
 import (
 	"encoding/json"
-	"net/url"
 )
 
 // HttpAction allows attaching an HTTP request action to a notification
 type HttpAction[X comparable] struct {
 	Label   string            `json:"label"`   //  string  -  Open garage door  Label of the action button in the notification
-	URL     *url.URL          `json:"url"`     //  string  -  https://ntfy.sh/mytopic  URL to which the HTTP request will be sent
+	URL     string            `json:"url,omitempty"`     //  string  -  https://ntfy.sh/mytopic  URL to which the HTTP request will be sent
 	Method  string            `json:"method"`  //  GET/POST/PUT/...  POST GET  HTTP method to use for request, default is POST ⚠️
 	Headers map[string]string `json:"headers"` // map of strings  -  see above  HTTP headers to pass in request. When publishing as JSON, headers are passed as a map. When the simple format is used, use headers.<header1>=<value>.
 	Body    X                 `json:"body"`    //  string  empty  some body, somebody?  HTTP body
